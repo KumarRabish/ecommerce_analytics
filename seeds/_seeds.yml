@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: fx_rates
+    config:
+      column_types:
+        rate_date: date
+        currency_code: varchar
+        usd_rate: number(18,6)
+    columns:
+      - name: usd_rate
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [rate_date, currency_code]

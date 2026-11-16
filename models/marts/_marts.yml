@@ -1,0 +1,125 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per customer plus an unknown member (-1). No PII.
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+
+  - name: dim_products
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+      - name: unit_cost
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                row_condition: "unit_cost is not null"
+
+  - name: dim_date
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+      - name: fiscal_quarter
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
+
+  - name: fct_orders
+    description: One row per order. Grain = order_id. Soft-deleted rows are kept with is_deleted = true.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "net_amount_usd = gross_amount_usd - discount_amount_usd"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "refund_amount_usd <= net_amount_usd + 0.01"
+          config: {severity: warn}          # a refund above the order value needs a human look
+      - dbt_utils.recency:
+          arguments:
+            datepart: hour
+            field: last_changed_at
+            interval: 24
+          config: {severity: warn}
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_key
+        data_tests:
+          - not_null
+          - relationships: 
+              arguments:          
+                {to: ref('dim_customers'), field: customer_key}
+      - name: order_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: 
+                {to: ref('dim_date'), field: date_day}
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pending', 'cancelled', 'paid', 'shipped', 'delivered']
+      - name: net_amount_usd
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                {min_value: 0}
+
+  - name: fct_order_items
+    description: One row per order line. Grain = order_item_id.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                {to: ref('fct_orders'), field: order_id}
+      - name: product_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: 
+                {to: ref('dim_products'), field: product_key}
+      - name: quantity
+        data_tests:
+          - dbt_utils.accepted_range: 
+              arguments:
+                {min_value: 1}
+      - name: net_amount_usd
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between: 
+              arguments:
+                {min_value: 0}
+
+  - name: fct_refunds
+    columns:
+      - name: refund_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments: 
+                {to: ref('fct_orders'), field: order_id}
+      - name: refund_amount_usd
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: 
+                {min_value: 0, inclusive: false}
+
+  - name: fct_payments
+    columns:
+      - name: payment_id
+        data_tests: [unique, not_null]
+      - name: payment_status
+        data_tests:
+          - accepted_values:
+              arguments: 
+                {values: ['succeeded', 'failed', 'pending', 'refunded']}

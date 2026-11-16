@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: sv_refunds
+    description: Certified refunds interface. Active, non-test rows only.
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: refund_id
+        data_type: number
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_type: number
+        data_tests:
+          - relationships: 
+              arguments:
+                {to: ref('sv_orders'), field: order_id}
+      - name: refund_date
+        data_type: date
+      - name: refund_amount_usd
+        data_type: number
+      - name: refund_reason
+        data_type: varchar
+
+  - name: sv_orders
+    description: Certified orders interface (all statuses). Active, non-test rows only.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_key
+        data_tests:
+          - relationships:
+              arguments: 
+                {to: ref('sv_customers'), field: customer_key}
+      - name: order_date
+        data_tests:
+          - relationships: 
+              arguments:
+                {to: ref('sv_dim_date'), field: date_day}
+
+  - name: sv_order_items
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships: 
+              arguments:
+                {to: ref('sv_orders'), field: order_id}
+      - name: product_key
+        data_tests:
+          - relationships: 
+              arguments:
+                {to: ref('sv_products'), field: product_key}
+
+  - name: sv_customers
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+  - name: sv_products
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+  - name: sv_dim_date
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
