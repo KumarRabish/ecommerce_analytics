@@ -1,0 +1,13 @@
+unit_tests:
+  - name: stg_orders_normalises_and_dedupes
+    model: stg_shop__orders
+    given:
+      - input: source('shop', 'orders')
+        rows:
+          - {id: 1, customer_id: 7,    status: ' PAID ', currency: 'usd', channel: null, is_test: null, shipping_country: 'in', shipping_fee: null, created_at: '2026-03-01 10:00:00 +0000', _fivetran_deleted: false, _fivetran_synced: '2026-03-01 11:00:00 +0000'}
+          - {id: 1, customer_id: 7,    status: 'shipped', currency: 'usd', channel: null, is_test: null, shipping_country: 'in', shipping_fee: null, created_at: '2026-03-01 10:00:00 +0000', _fivetran_deleted: false, _fivetran_synced: '2026-03-02 09:00:00 +0000'}
+          - {id: 2, customer_id: null, status: 'Cancelled', currency: 'EUR', channel: 'Web', is_test: true, shipping_country: 'DE', shipping_fee: 5, created_at: '2026-03-01 23:30:00 -0500', _fivetran_deleted: true, _fivetran_synced: '2026-03-02 09:00:00 +0000'}
+    expect:
+      rows:
+        - {order_id: 1, customer_id: 7,  order_status: 'shipped',   currency_code: 'USD', channel: 'unknown', is_test_order: false, shipping_fee: 0, is_deleted: false}
+        - {order_id: 2, customer_id: -1, order_status: 'cancelled', currency_code: 'EUR', channel: 'web',     is_test_order: true,  shipping_fee: 5, is_deleted: true}
