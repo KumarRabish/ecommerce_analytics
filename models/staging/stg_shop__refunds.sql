@@ -4,9 +4,9 @@ with latest as (
 )
 
 select
-    id::number                         as refund_id,
-    order_id::number                   as order_id,
-    order_item_id::number              as order_item_id,    -- null = order-level refund
+    id::number(38, 0)                        as refund_id,
+    order_id::number(38, 0)                   as order_id,
+    order_item_id::number(38, 0)              as order_item_id,    -- null = order-level refund
     amount::number(18, 2)              as refund_amount,
     lower(trim(reason))                as refund_reason,
     {{ utc_ntz('refunded_at') }}       as refunded_at,

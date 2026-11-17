@@ -6,13 +6,13 @@
 ) }}
 
 select
-    refund_id,
-    order_id,
+    refund_id::number(38,0) as refund_id,
+    order_id::number(38,0) as order_id,
     order_item_id,
     refund_date,
     refunded_at,
     refund_reason,
-    refund_amount_usd,
+    refund_amount_usd::number(18,2) as refund_amount_usd,
     is_test_order,
     is_deleted,
     last_changed_at,

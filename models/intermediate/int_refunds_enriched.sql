@@ -5,7 +5,7 @@ select
     r.refund_date,
     r.refunded_at,
     r.refund_reason,
-    round(r.refund_amount * o.usd_rate, 2)  as refund_amount_usd,
+    CAST(round(r.refund_amount * o.usd_rate, 2) as number(18,2))  as refund_amount_usd,
     o.is_test_order,
     (r.is_deleted or o.is_deleted)          as is_deleted,
     greatest(r.synced_at, o.synced_at)      as last_changed_at
