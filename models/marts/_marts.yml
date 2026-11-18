@@ -1,5 +1,4 @@
 version: 2
-
 models:
   - name: dim_customers
     description: One row per customer plus an unknown member (-1). No PII.
