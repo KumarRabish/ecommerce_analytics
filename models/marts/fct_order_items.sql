@@ -32,3 +32,4 @@ left join {{ ref('dim_products') }} p
 {% if is_incremental() %}
 where e.last_changed_at >= {{ watermark() }}
 {% endif %}
+
